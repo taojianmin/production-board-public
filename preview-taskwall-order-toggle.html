@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>任務牆｜訂單工序展開與收合預覽</title>
+<style>
+:root{
+  color-scheme:light;
+  --bg:#eef1f4;--panel:#fff;--panel2:#f6f8fa;--line:#d8dee5;--ink:#18222e;--muted:#5d6b7a;
+  --accent:#24507f;--accent-soft:#e8eff7;--ok:#1e7a46;--ok-bg:#e1f2e8;--complete:#008075;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 "Microsoft JhengHei","Microsoft YaHei",system-ui,sans-serif}
+h1,h2,h3,p{margin:0}
+button{font:inherit;color:inherit}
+.wrap{width:min(1180px,100%);margin:auto;padding-inline:24px}
+.top{background:var(--panel);border-bottom:1px solid var(--line)}
+.top .wrap{min-height:54px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{font-size:17px;font-weight:800}
+.muted,.meta{color:var(--muted);font-size:12px}
+main.wrap{padding-block:22px 36px}
+.view-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+h1{font-size:21px}
+.view-name{padding:5px 11px;border-radius:6px;background:var(--accent);color:#fff;font-size:12px;font-weight:700}
+.orders{display:grid;gap:12px}
+.order{min-width:0;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.order.completed{border:2px solid var(--complete)}
+.order-head{display:flex;align-items:center;gap:12px;padding:7px 12px}
+.order-heading{flex:1;min-width:0;font-size:inherit}
+.order-toggle{
+  display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:9px;align-items:center;width:100%;
+  padding:8px 7px;background:transparent;border:0;border-radius:6px;text-align:left;cursor:pointer
+}
+.order-toggle:hover{background:var(--accent-soft)}
+.order-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.chevron{width:8px;height:8px;border-right:2px solid var(--accent);border-bottom:2px solid var(--accent);transform:rotate(-45deg);margin:0 3px}
+.order-toggle[aria-expanded="true"] .chevron{transform:translateY(-2px) rotate(45deg)}
+.order-lines{display:grid;gap:4px;min-width:0}
+.order-line,.meta{display:flex;align-items:center;flex-wrap:wrap;gap:3px 9px}
+.order-name{font-size:15px;overflow-wrap:anywhere}
+.badge{padding:1px 6px;border-radius:4px;font-size:11px;font-weight:650}
+.badge.done{background:var(--ok-bg);color:var(--ok)}
+.badge.manual{background:var(--accent-soft);color:var(--accent)}
+.meta b{color:var(--ink)}
+.sizes{font-size:12px;color:var(--muted);font-weight:400}
+.sizes strong{color:var(--ink);font-weight:650}
+.toggle-label{white-space:nowrap;color:var(--accent);font-size:12px;font-weight:700}
+.actions{display:flex;flex:none;gap:6px}
+.actions button{padding:3px 7px;border:1px solid var(--line);border-radius:5px;background:var(--panel2);font-size:11px;color:var(--muted)}
+.stages{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;padding:4px 13px 13px}
+.stages.manual-stages{grid-template-columns:repeat(3,minmax(0,1fr))}
+.stage{min-width:0;display:grid;align-content:start;gap:4px;padding:9px 10px;border:1px solid var(--line);border-top:3px solid var(--stage);border-radius:7px;background:var(--panel2)}
+.stage-name{display:flex;align-items:baseline;gap:6px;color:var(--stage);font-size:13px;font-weight:700;overflow-wrap:anywhere}
+.stage-name::before{content:"";flex:none;width:7px;height:7px;border-radius:2px;background:var(--stage)}
+.route{font-size:11px;color:var(--muted)}
+.quantity{white-space:nowrap}
+.quantity b{font:700 20px/1.2 ui-monospace,Consolas,monospace}
+.quantity small{font-size:12px;color:var(--muted)}
+.track{height:5px;border-radius:3px;background:#e0e6eb;overflow:hidden;margin:2px 0}
+.track i{display:block;width:var(--progress);height:100%;background:var(--stage)}
+.stage-note{font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+.worker{display:flex;align-items:baseline;justify-content:space-between;gap:6px;margin-top:4px;padding-top:5px;border-top:1px solid var(--line);font-size:12px}
+.stage-check{display:flex;gap:6px;align-items:center;margin-top:4px;color:var(--accent);font-size:12px}
+.stage-check input{accent-color:var(--ok)}
+.num{font-variant-numeric:tabular-nums}
+@media(max-width:750px){
+  .wrap{padding-inline:14px}
+  main.wrap{padding-block:14px 26px}
+  .order-head{flex-wrap:wrap;gap:2px;padding:6px 8px}
+  .order-heading{flex:1 1 100%}
+  .actions{padding:0 0 3px 25px}
+  .stages,.stages.manual-stages{grid-template-columns:repeat(2,minmax(0,1fr));padding:4px 8px 9px;gap:7px}
+}
+@media(max-width:360px){
+  .toggle-label{font-size:11px}
+  .order-toggle{gap:5px;padding-inline:4px}
+  .order-name{font-size:14px}
+  .stage{padding:7px 8px}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap"><b class="brand">車間生產看板</b><span class="muted">互動預覽 · 示例資料</span></div>
+</header>
+<main class="wrap">
+  <div class="view-heading"><h1>任務牆</h1><span class="view-name">按訂單</span></div>
+  <div id="orders" class="orders"></div>
+</main>
+<script>
+const colors = ['#0f7b78', '#956013', '#5f7424', '#a8392b'];
+const orders = [
+  {
+    id:'completed', name:'三耳夾棉 · 粉色', quantity:500, sizes:[['M', 500]], completed:true,
+    stages:[
+      {name:'拷邊（三條）', done:500, note:'M 已做完'},
+      {name:'平車壓線', done:500, note:'M 已做完'},
+      {name:'三針五線包邊', done:500, note:'M 已做完'},
+      {name:'剪線／包裝', done:500, note:'M 已做完'},
+    ],
+  },
+  {
+    id:'active', name:'三維假面 · 白色', quantity:4800, sizes:[['M', 1000], ['L', 1600], ['XL', 2200]],
+    stages:[
+      {name:'拷邊', done:4800, note:'各尺碼已做完', worker:'員工甲'},
+      {name:'平車壓線', route:'平車', done:3600, note:'待做 L 400 · XL 800', worker:'員工乙'},
+      {name:'雙針壓線', done:2100, note:'待做 M 600 · L 900 · XL 1,200', worker:'員工丙'},
+      {name:'剪線／包裝', done:1200, note:'待做 M 700 · L 1,200 · XL 1,700', worker:'員工丁'},
+    ],
+  },
+  {
+    id:'manual', name:'六拼腰帶 · 黑色', quantity:300, sizes:[['S', 100], ['M', 100], ['L', 100]], manual:true,
+    stages:[
+      {name:'拼接', done:300, note:'各尺碼已做完', confirmed:true},
+      {name:'壓線', done:100, note:'待做 M 100 · L 100'},
+      {name:'包裝', done:0, note:'待做 S 100 · M 100 · L 100'},
+    ],
+  },
+];
+const format = quantity => quantity.toLocaleString('zh-TW');
+
+function renderStage(order, stage, index) {
+  const width = Math.min(100, 100 * stage.done / order.quantity);
+  return `<article class="stage" style="--stage:${colors[index]};--progress:${width}%">
+    <h3 class="stage-name">${stage.name}</h3>
+    ${stage.route ? `<p class="route">看板路線「${stage.route}」</p>` : ''}
+    <div class="quantity num"><b>${format(stage.done)}</b> <small>/ ${format(order.quantity)} 件</small></div>
+    <div class="track" aria-hidden="true"><i></i></div>
+    <p class="stage-note">${stage.note}</p>
+    ${stage.worker ? `<div class="worker"><span>${stage.worker}</span><b class="num">${format(stage.done)}</b></div>` : ''}
+    ${order.manual ? `<label class="stage-check"><input type="checkbox" disabled ${stage.confirmed ? 'checked' : ''}>${stage.confirmed ? '已確認完成' : '確認本工序已完成'}</label>` : ''}
+  </article>`;
+}
+
+function renderOrder(order) {
+  const count = order.stages.length;
+  const finalDone = order.stages[count - 1].done;
+  const confirmed = order.stages.filter(stage => stage.confirmed).length;
+  const panelId = 'stages-' + order.id;
+  return `<section class="order${order.completed ? ' completed' : ''}" aria-labelledby="order-${order.id}">
+    <header class="order-head">
+      <h2 class="order-heading">
+        <button type="button" class="order-toggle" id="order-${order.id}" aria-controls="${panelId}" aria-expanded="false" data-count="${count}">
+          <span class="chevron" aria-hidden="true"></span>
+          <span class="order-lines">
+            <span class="order-line">
+              <strong class="order-name">${order.name}</strong>
+              ${order.completed ? '<span class="badge done">已達完工量 · 待確認</span>' : ''}
+              ${order.manual ? '<span class="badge manual">手工新建</span>' : ''}
+            </span>
+            <span class="meta">
+              <span>訂單 <b class="num">${format(order.quantity)}</b> 件</span>
+              <span>最後一道完成 <b class="num">${format(finalDone)}</b> / ${format(order.quantity)}</span>
+              ${order.manual ? `<span>${confirmed} / ${count} 道已確認</span>` : ''}
+            </span>
+            <span class="sizes">${order.sizes.map(([size, qty]) => `<span>${size} <strong class="num">${format(qty)}</strong></span>`).join('　')}</span>
+          </span>
+          <span class="toggle-label">展開 ${count} 道工序</span>
+        </button>
+      </h2>
+      <div class="actions">
+        <button type="button" disabled>派工／修改</button>
+        <button type="button" disabled>這單完成</button>
+      </div>
+    </header>
+    <div class="stages${order.manual ? ' manual-stages' : ''}" id="${panelId}" hidden>
+      ${order.stages.map((stage, index) => renderStage(order, stage, index)).join('')}
+    </div>
+  </section>`;
+}
+
+const list = document.getElementById('orders');
+list.innerHTML = orders.map(renderOrder).join('');
+for (const button of list.querySelectorAll('.order-toggle')) {
+  const panel = document.getElementById(button.getAttribute('aria-controls'));
+  const label = button.querySelector('.toggle-label');
+  button.addEventListener('click', () => {
+    const opening = panel.hidden;
+    panel.hidden = !opening;
+    button.setAttribute('aria-expanded', String(opening));
+    label.textContent = opening ? '收合工序' : `展開 ${button.dataset.count} 道工序`;
+  });
+}
+</script>
+</body>
+</html>

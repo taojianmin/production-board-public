@@ -1,0 +1,34 @@
+车间生产看板 · 群晖 NAS 部署说明
+=================================
+
+文件夹里有什么
+  docker-compose.yml   容器设置（端口 8686）
+  app\server.js        服务程序
+  app\index.html       看板网页
+  data\db.json         看板数据（工人、工序、订单、报工）
+  data\backup\         每天自动备份一份，保留最近 60 天
+
+第一次启动（群晖 Container Manager）
+  1. 打开 Container Manager → 左边点「项目」→「新增」
+  2. 项目名称填 production-board
+  3. 路径选 docker/production-board
+  4. 来源选「使用现有的 docker-compose.yml」
+  5. 一路下一步，完成后会自动拉取镜像并启动
+  6. 浏览器打开 http://nas.example.invalid:8686（将主机名换成实际 NAS 地址）
+
+如果拉取镜像失败
+  把 docker-compose.yml 里的 image 一行改成
+    image: node:20-alpine
+  或者换成你常用的镜像源，再重新构建项目。
+
+以后更新网页
+  只需要替换 app\index.html，再刷新网页就生效，不用重启。
+  （只有替换 app\server.js 时才需要在 Container Manager 里重启这个项目。）
+  data 文件夹不要动，里面是数据。
+
+数据恢复
+  停止项目 → 用 data\backup 里某一天的文件替换 data\db.json → 启动项目。
+
+注意
+  局域网里能打开这个地址的人都可以查看和修改看板，没有密码。
+  不要把 8686 端口映射到外网。

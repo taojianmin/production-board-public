@@ -1,0 +1,17 @@
+services:
+  production-board:
+    # 国内镜像源；如果拉取失败，改成 node:20-alpine 或其他可用的镜像源
+    image: docker.m.daocloud.io/library/node:20-alpine
+    container_name: production-board
+    restart: unless-stopped
+    working_dir: /app
+    command: node server.js
+    # 用群晖自己的网络：看板能看到访问者的真实地址，厂里局域网才能免登录
+    network_mode: host
+    volumes:
+      - ./app:/app:ro
+      - ./data:/data
+    environment:
+      TZ: Asia/Shanghai
+      DATA_DIR: /data
+      PORT: "8686"

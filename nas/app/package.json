@@ -1,0 +1,8 @@
+{
+  "name": "production-board",
+  "private": true,
+  "description": "车间生产看板 NAS 服务",
+  "dependencies": {
+    "tedious": "18.6.2"
+  }
+}
