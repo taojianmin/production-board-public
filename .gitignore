@@ -1,0 +1,32 @@
+# Local and production data
+/nas/data/
+.codex-attachments/
+.env
+.env.*
+宏翔数据库.json
+db.json
+auth.json
+sessions.json
+*.pem
+*.key
+*.pfx
+*.p12
+*.jks
+*.keystore
+
+# Local archival and one-time datasets
+/backup/
+/historical-backfill-test/
+
+# Machine-specific files and generated dependencies
+node_modules/
+.gradle/
+build/
+/android/local.properties
+*.apk
+*.aab
+
+# Local operational documents and verification captures
+/历史扫票补登-*.md
+/群晖HTTPS和登录设置.md
+/validation-*.png
